@@ -7,6 +7,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
@@ -19,11 +20,11 @@ public class MainApplication extends Application {
         launch(args);
     }
     public void start(Stage primaryStage) {
-        Image icon = new Image(getClass().getResourceAsStream("/images/DollarClouddatabase.png"));
+        Image icon = new Image(getClass().getResourceAsStream("/images/cookie (1).png"));
         this.primaryStage = primaryStage;
         this.primaryStage.setResizable(false);
         primaryStage.getIcons().add(icon);
-        primaryStage.setTitle("Employee Roster Program"); //change
+        primaryStage.setTitle("Employee Roster Program");
         showScene1();
     }
     private void showScene1() {

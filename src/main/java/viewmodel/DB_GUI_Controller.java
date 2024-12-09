@@ -24,16 +24,14 @@ import service.UserSession;
 
 import java.io.*;
 import java.net.URL;
-import java.sql.SQLException;
-import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.*;
 
 public class DB_GUI_Controller implements Initializable {
 
     @FXML
-    TextField first_name, last_name, department, email, imageURL;
+    TextField first_name, last_name, address, email, imageURL;
     @FXML
-    ComboBox<Major> major;
+    ComboBox<Role> role;
     @FXML
     ImageView img_view;
     @FXML
@@ -43,11 +41,9 @@ public class DB_GUI_Controller implements Initializable {
     @FXML
     private TableColumn<Person, Integer> tv_id, tv_user_id;
     @FXML
-    private TableColumn<Person, String> tv_fn, tv_ln, tv_department, tv_major, tv_email;
+    private TableColumn<Person, String> tv_fn, tv_ln, tv_address, tv_role, tv_email;
     @FXML
     private Button addBtn;
-    @FXML
-    private ProgressBar statusProgressBar;
     @FXML
     private Button editBtn;
     @FXML
@@ -56,6 +52,8 @@ public class DB_GUI_Controller implements Initializable {
     private MenuItem editItem;
     private final DbConnectivityClass cnUtil = new DbConnectivityClass();
     private final ObservableList<Person> data = cnUtil.getData();
+    Image defaultImage = new Image(getClass().getResource("/images/profile.png").toExternalForm());
+
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -63,14 +61,12 @@ public class DB_GUI_Controller implements Initializable {
             tv_id.setCellValueFactory(new PropertyValueFactory<>("id"));
             tv_fn.setCellValueFactory(new PropertyValueFactory<>("firstName"));
             tv_ln.setCellValueFactory(new PropertyValueFactory<>("lastName"));
-            tv_department.setCellValueFactory(new PropertyValueFactory<>("department"));
-            tv_major.setCellValueFactory(new PropertyValueFactory<>("major"));
+            tv_address.setCellValueFactory(new PropertyValueFactory<>("address"));
+            tv_role.setCellValueFactory(new PropertyValueFactory<>("role"));
             tv_email.setCellValueFactory(new PropertyValueFactory<>("email"));
             tv.setItems(data);
             //populate combo-box
-            major.setItems(FXCollections.observableArrayList(Major.values()));
-            // hide progressbar on start
-            statusProgressBar.setVisible(false);
+            role.setItems(FXCollections.observableArrayList(Role.values()));
             tv_user_id.setVisible(false);
             buttonHandler();
             addListeners();
@@ -80,12 +76,26 @@ public class DB_GUI_Controller implements Initializable {
             throw new RuntimeException(e);
         }
     }
+    // Will add a new employee
     @FXML
-    protected void addNewRecord() {
-        Person p = new Person(first_name.getText(), last_name.getText(), department.getText(),
-                major.getValue().toString(), email.getText(), imageURL.getText(), UserSession.getInstance().getUserId());
+    protected void addNewEmployee() {
+        String newEmail = email.getText().trim();
+        boolean emailExists = data.stream()
+                .anyMatch(person -> person.getEmail().equalsIgnoreCase(newEmail));
+        if (emailExists) {
+            showAlert(Alert.AlertType.ERROR, "Duplicate Email", "An employee with this email already exists.");
+            return;
+        }
+        Person p = new Person(
+                first_name.getText().trim(),
+                last_name.getText().trim(),
+                address.getText().trim(),
+                role.getValue().toString().trim(),
+                newEmail,
+                imageURL.getText().trim(),
+                UserSession.getInstance().getUserId()
+        );
         cnUtil.insertUser(p);
-        cnUtil.retrieveId(p);
         p.setId(cnUtil.retrieveId(p));
         data.add(p);
         showSuccessMessage();
@@ -95,12 +105,13 @@ public class DB_GUI_Controller implements Initializable {
     protected void clearForm() {
         first_name.setText("");
         last_name.setText("");
-        department.setText("");
+        address.setText("");
         email.setText("");
         imageURL.setText("");
-        major.setValue(null);
+        role.setValue(null);
         tv.getSelectionModel().clearSelection();
-        img_view.setImage(null);
+        Image defaultImage = new Image(getClass().getResource("/images/profile.png").toExternalForm());
+        img_view.setImage(defaultImage);
     }
     @FXML
     protected void logOut(ActionEvent actionEvent) {
@@ -139,9 +150,9 @@ public class DB_GUI_Controller implements Initializable {
         }
         int index = data.indexOf(p);
         int userId = UserSession.getInstance().getUserId();
-        Major selectedMajor = major.getValue();
-        Person p2 = new Person(p.getId(), first_name.getText(), last_name.getText(), department.getText(),
-                selectedMajor.toString(), email.getText(), imageURL.getText(), userId);
+        Role selectedRole = role.getValue();
+        Person p2 = new Person(p.getId(), first_name.getText(), last_name.getText(), address.getText(),
+                selectedRole.toString(), email.getText(), imageURL.getText(), userId);
         cnUtil.editUser(p.getId(), p2);
         data.remove(p);
         data.add(index, p2);
@@ -153,11 +164,13 @@ public class DB_GUI_Controller implements Initializable {
     @FXML
     protected void deleteRecord() {
         Person p = tv.getSelectionModel().getSelectedItem();
-        int index = data.indexOf(p);
-        cnUtil.deleteRecord(p);
-        data.remove(index);
-        tv.getSelectionModel().select(index);
-        showSuccessMessage();
+        if(p != null) {
+            int index = data.indexOf(p);
+            cnUtil.deleteRecord(p);
+            data.remove(index);
+            tv.getSelectionModel().select(index);
+            showSuccessMessage();
+        }
     }
     @FXML
     protected void showImage() {
@@ -178,8 +191,8 @@ public class DB_GUI_Controller implements Initializable {
         }
         first_name.setText(p.getFirstName());
         last_name.setText(p.getLastName());
-        department.setText(p.getDepartment());
-        major.setValue(Major.valueOf(p.getMajor()));
+        address.setText(p.getAddress());
+        role.setValue(Role.valueOf(p.getRole()));
         email.setText(p.getEmail());
         imageURL.setText(p.getImageURL());
         if (!p.getImageURL().isEmpty()) {
@@ -188,10 +201,10 @@ public class DB_GUI_Controller implements Initializable {
                 img_view.setImage(image);
             } catch (IllegalArgumentException e) {
                 System.out.println("Invalid Image URL");
-                img_view.setImage(null);
+                img_view.setImage(defaultImage);
             }
         } else {
-            img_view.setImage(null);
+            img_view.setImage(defaultImage);
         }
     }
     public void lightTheme(ActionEvent actionEvent) {
@@ -227,9 +240,9 @@ public class DB_GUI_Controller implements Initializable {
         TextField textField1 = new TextField("Name");
         TextField textField2 = new TextField("Last Name");
         TextField textField3 = new TextField("Email ");
-        ObservableList<Major> options =
-                FXCollections.observableArrayList(Major.values());
-        ComboBox<Major> comboBox = new ComboBox<>(options);
+        ObservableList<Role> options =
+                FXCollections.observableArrayList(Role.values());
+        ComboBox<Role> comboBox = new ComboBox<>(options);
         comboBox.getSelectionModel().selectFirst();
         dialogPane.setContent(new VBox(8, textField1, textField2,textField3, comboBox));
         Platform.runLater(textField1::requestFocus);
@@ -243,37 +256,31 @@ public class DB_GUI_Controller implements Initializable {
         Optional<Results> optionalResult = dialog.showAndWait();
         optionalResult.ifPresent((Results results) -> {
             MyLogger.makeLog(
-                    results.fname + " " + results.lname + " " + results.major);
+                    results.fname + " " + results.lname + " " + results.role);
         });
     }
-    public enum Major {
-        CS, CPIS, ENG, BSME  // Define the available majors
+    public enum Role {
+        BAKER, MIXER, BALLER, CASHIER, MANAGER
     }
     private static class Results {
         String fname;
         String lname;
-        Major major;
-        public Results(String name, String date, Major venue) {
+        Role role;
+        public Results(String name, String date, Role venue) {
             this.fname = name;
             this.lname = date;
-            this.major = venue;
+            this.role = venue;
         }
     }
     private void validateForm() {
-        boolean formValid = true;
-        if (first_name.getText().isEmpty() || !first_name.getText().matches("^[A-Za-z]+$")) {
-            formValid = false;
-        } else if (last_name.getText().isEmpty() || !last_name.getText().matches("^[A-Za-z]+$")) {
-            formValid = false;
-        } else if (department.getText().isEmpty() || !department.getText().matches("^[A-Za-z ]+$")) {
-            formValid = false;
-        } else if (email.getText().isEmpty() || !email.getText().matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$")) {
-            formValid = false;
-        } else if (!imageURL.getText().isEmpty() && !imageURL.getText().matches("^https?://[\\S]+$")) {
-            formValid = false;
-        } else if (major.getValue() == null) {
-            formValid = false;
-        }
+        boolean formValid =
+                first_name.getText().matches("^[A-Za-z]+$") &&
+                        last_name.getText().matches("^[A-Za-z]+$") &&
+                        address.getText().matches("^\\d+\\s[A-Za-z0-9\\s,.'-]+(\\s[A-Za-z0-9\\s,.'-]+)*$") &&
+                        email.getText().matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$") &&
+                        (imageURL.getText().isEmpty() || imageURL.getText().matches("^(https?://)(www\\.)?[a-zA-Z0-9-]+\\.[a-zA-Z]{2,}(/[\\S]*)?$")) &&
+                        role.getValue() != null;
+
         addBtn.setDisable(!formValid);
         editBtn.setDisable(!formValid);
         editItem.setDisable(!formValid);
@@ -290,30 +297,17 @@ public class DB_GUI_Controller implements Initializable {
     private void addListeners(){
         first_name.textProperty().addListener((observable, oldValue, newValue) -> validateForm());
         last_name.textProperty().addListener((observable, oldValue, newValue) -> validateForm());
-        department.textProperty().addListener((observable, oldValue, newValue) -> validateForm());
+        address.textProperty().addListener((observable, oldValue, newValue) -> validateForm());
         email.textProperty().addListener((observable, oldValue, newValue) -> validateForm());
         imageURL.textProperty().addListener((observable, oldValue, newValue) -> validateForm());
-        major.valueProperty().addListener((observable, oldValue, newValue) -> validateForm());
+        role.valueProperty().addListener((observable, oldValue, newValue) -> validateForm());
     }
     private void showSuccessMessage() {
-        statusProgressBar.setVisible(true);
-        statusProgressBar.setProgress(0);
-        new Thread(() -> {
-            try {
-                statusProgressBar.setProgress(1.0);
-                Thread.sleep(2000);
-                Platform.runLater(() -> {
-                    statusProgressBar.setVisible(false);
-                    Alert alert = new Alert(Alert.AlertType.INFORMATION);
-                    alert.setTitle("Success");
-                    alert.setHeaderText(null);
-                    alert.setContentText("Data has been successfully edited!");
-                    alert.showAndWait();
-                });
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }).start();
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Success");
+        alert.setHeaderText(null);
+        alert.setContentText("Data has been successfully edited!");
+        alert.showAndWait();
     }
     @FXML
     protected void importCSV() {
@@ -331,11 +325,11 @@ public class DB_GUI_Controller implements Initializable {
                         String[] parts = line.split(",");
                         String firstName = parts[1].trim();
                         String lastName = parts[2].trim();
-                        String department = parts[3].trim();
-                        String major = parts[4].trim();
+                        String address = parts[3].trim();
+                        String role = parts[4].trim();
                         String email = parts[5].trim();
                         String imgURL = parts[6].trim();
-                        Person person = new Person(firstName, lastName, department, major, email, imgURL, UserSession.getInstance().getUserId());
+                        Person person = new Person(firstName, lastName, address, role, email, imgURL, UserSession.getInstance().getUserId());
                         // Check if the person already exists in the database based on email and userID
                         if (!cnUtil.doesUserExist(person.getEmail(), UserSession.getInstance().getUserId())) {
                             // Proceed with adding the user if no duplicate email is found
@@ -347,7 +341,7 @@ public class DB_GUI_Controller implements Initializable {
                         }
                     }
                 }
-                tv.refresh();  // Refresh the TableView to display the newly added records
+                tv.refresh();
                 showAlert(Alert.AlertType.INFORMATION, "Import Successful", "CSV file imported successfully.");
             } catch (FileNotFoundException e) {
                 showAlert(Alert.AlertType.ERROR, "Error", "CSV file not found.");
@@ -366,7 +360,7 @@ public class DB_GUI_Controller implements Initializable {
         File selectedFile = fc.showSaveDialog(null);
         if (selectedFile != null) {
             try (FileWriter fw = new FileWriter(selectedFile)) {
-                fw.write("First Name,Last Name,Department,Major,Email,Image URL\n");
+                fw.write("First Name,Last Name,Address,Role,Email,Image URL\n");
                 Set<String> seenEmails = new HashSet<>();
                 cnUtil.getData().clear();
                 for (Person person : cnUtil.getData()) {
@@ -375,8 +369,8 @@ public class DB_GUI_Controller implements Initializable {
                         fw.write(String.join(",",
                                 person.getFirstName(),
                                 person.getLastName(),
-                                person.getDepartment(),
-                                person.getMajor(),
+                                person.getAddress(),
+                                person.getRole(),
                                 person.getEmail(),
                                 person.getImageURL()
                         ) + "\n");

@@ -4,19 +4,19 @@ public class Person {
     private Integer id;
     private String firstName;
     private String lastName;
-    private String department;
-    private String major;
+    private String address;
+    private String role;
     private String email;
     private String imageURL;
     private int userID;
 
     public Person() {
     }
-    public Person(String firstName, String lastName, String department, String major, String email,  String imageURL, int userID) {
+    public Person(String firstName, String lastName, String Address, String role, String email, String imageURL, int userID) {
         this.firstName = firstName;
         this.lastName = lastName;
-        this.department = department;
-        this.major = major;
+        this.address = Address;
+        this.role = role;
         this.email = email;
         this.imageURL = imageURL;
         this.userID = userID;
@@ -29,12 +29,12 @@ public class Person {
         this.userID = userID;
     }
 
-    public Person(Integer id, String firstName, String lastName, String department, String major, String email, String imageURL, int userID) {
+    public Person(Integer id, String firstName, String lastName, String Address, String role, String email, String imageURL, int userID) {
         this.id = id;
         this.firstName = firstName;
         this.lastName = lastName;
-        this.department = department;
-        this.major = major;
+        this.address = Address;
+        this.role = role;
         this.email = email;
         this.imageURL = imageURL;
         this.userID = userID;
@@ -75,21 +75,21 @@ public class Person {
     }
 
 
-    public String getMajor() {
-        return major;
+    public String getRole() {
+        return role;
     }
 
-    public void setMajor(String major) {
-        this.major = major;
+    public void setRole(String role) {
+        this.role = role;
     }
 
 
-    public String getDepartment() {
-        return department;
+    public String getAddress() {
+        return address;
     }
 
-    public void setDepartment(String department) {
-        this.department = department;
+    public void setAddress(String address) {
+        this.address = address;
     }
 
     public String getImageURL() {
@@ -106,8 +106,8 @@ public class Person {
                 "id=" + id +
                 ", firstName='" + firstName + '\'' +
                 ", lastName='" + lastName + '\'' +
-                ", department='" + department + '\'' +
-                ", major='" + major + '\'' +
+                ", address='" + address + '\'' +
+                ", role='" + role + '\'' +
                 ", email='" + email + '\'' +
                 '}';
     }

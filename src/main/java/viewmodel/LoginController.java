@@ -1,23 +1,32 @@
 package viewmodel;
 
 import dao.DbConnectivityClass;
+import javafx.animation.RotateTransition;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.fxml.Initializable;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 import service.UserSession;
 
 import java.io.IOException;
+import java.net.URL;
+import java.util.ResourceBundle;
 
 public class LoginController {
     @FXML
     private TextField usernameTextField;
     @FXML
     private PasswordField passwordField;
+    @FXML
+    private ImageView GIF;
     private final DbConnectivityClass cnUtil = new DbConnectivityClass();
     @FXML
     public void login(ActionEvent actionEvent) {
@@ -30,12 +39,9 @@ public class LoginController {
         }
         // Check if the credentials are correct
         if (cnUtil.validateLogin(email, password)) {
-            // If credentials are valid, retrieve the userId from the database
             int userId = cnUtil.getUserIdFromEmail(email);
-            // Store the userId and email in the UserSession
             UserSession.getInstance().login(userId, email);
             System.out.println(UserSession.getInstance().getUserId());
-            // Load the main screen (db_interface_gui.fxml)
             try {
                 Parent root = FXMLLoader.load(getClass().getResource("/view/db_interface_gui.fxml"));
                 Scene scene = new Scene(root, 900, 600);

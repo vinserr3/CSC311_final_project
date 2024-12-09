@@ -32,12 +32,12 @@ public class DbConnectivityClass {
                 int id = resultSet.getInt("id");
                 String first_name = resultSet.getString("first_name");
                 String last_name = resultSet.getString("last_name");
-                String department = resultSet.getString("department");
-                String major = resultSet.getString("major");
+                String address = resultSet.getString("address");
+                String role = resultSet.getString("role");
                 String email = resultSet.getString("email");
                 String imageURL = resultSet.getString("imageURL");
                 int user_id = resultSet.getInt("user_id");
-                data.add(new Person(id, first_name, last_name, department, major, email, imageURL, user_id));
+                data.add(new Person(id, first_name, last_name, address, role, email, imageURL, user_id));
             }
             preparedStatement.close();
             conn.close();
@@ -49,7 +49,6 @@ public class DbConnectivityClass {
 
     public boolean connectToDatabase() {
         boolean hasRegisteredUsers = false;
-
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
             // Create Database If Not Exists
@@ -65,12 +64,12 @@ public class DbConnectivityClass {
                     "id INT(10) NOT NULL PRIMARY KEY AUTO_INCREMENT, " +
                     "first_name VARCHAR(200) NOT NULL, " +
                     "last_name VARCHAR(200) NOT NULL, " +
-                    "department VARCHAR(200), " +
-                    "major VARCHAR(200), " +
+                    "address VARCHAR(200), " +
+                    "role VARCHAR(200), " +
                     "email VARCHAR(200) NOT NULL, " +
                     "imageURL VARCHAR(200), " +
                     "user_id INT, " +
-                    "FOREIGN KEY (user_id) REFERENCES user_data(user_id))"; // Referencing user_id in user_data
+                    "FOREIGN KEY (user_id) REFERENCES user_data(user_id))";
             statement.executeUpdate(sql);
             // Create User Data Table for Login Credentials
             String createUserDataTable = """
@@ -109,11 +108,11 @@ public class DbConnectivityClass {
                 int id = resultSet.getInt("id");
                 String first_name = resultSet.getString("first_name");
                 String last_name = resultSet.getString("last_name");
-                String major = resultSet.getString("major");
-                String department = resultSet.getString("department");
+                String role = resultSet.getString("role");
+                String address = resultSet.getString("address");
 
                 lg.makeLog("ID: " + id + ", Name: " + first_name + " " + last_name + " "
-                        + ", Major: " + major + ", Department: " + department);
+                        + ", Role: " + role + ", address: " + address);
             }
             preparedStatement.close();
             conn.close();
@@ -121,46 +120,17 @@ public class DbConnectivityClass {
             e.printStackTrace();
         }
     }
-
-    public void listAllUsers() {
-        connectToDatabase();
-        try {
-            Connection conn = DriverManager.getConnection(DB_URL, USERNAME, PASSWORD);
-            String sql = "SELECT * FROM users ";
-            PreparedStatement preparedStatement = conn.prepareStatement(sql);
-
-            ResultSet resultSet = preparedStatement.executeQuery();
-
-            while (resultSet.next()) {
-                int id = resultSet.getInt("id");
-                String first_name = resultSet.getString("first_name");
-                String last_name = resultSet.getString("last_name");
-                String department = resultSet.getString("department");
-                String major = resultSet.getString("major");
-                String email = resultSet.getString("email");
-
-                lg.makeLog("ID: " + id + ", Name: " + first_name + " " + last_name + " "
-                        + ", Department: " + department + ", Major: " + major + ", Email: " + email);
-            }
-
-            preparedStatement.close();
-            conn.close();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
     public void insertUser(Person person) {
         connectToDatabase();
         try {
             System.out.println(person);
             Connection conn = DriverManager.getConnection(DB_URL, USERNAME, PASSWORD);
-            String sql = "INSERT INTO users (first_name, last_name, department, major, email, imageURL, user_id) VALUES (?, ?, ?, ?, ?, ?, ?)";
+            String sql = "INSERT INTO users (first_name, last_name, address, role, email, imageURL, user_id) VALUES (?, ?, ?, ?, ?, ?, ?)";
             PreparedStatement preparedStatement = conn.prepareStatement(sql);
             preparedStatement.setString(1, person.getFirstName());
             preparedStatement.setString(2, person.getLastName());
-            preparedStatement.setString(3, person.getDepartment());
-            preparedStatement.setString(4, person.getMajor());
+            preparedStatement.setString(3, person.getAddress());
+            preparedStatement.setString(4, person.getRole());
             preparedStatement.setString(5, person.getEmail());
             preparedStatement.setString(6, person.getImageURL());
             preparedStatement.setInt(7, person.getUserID());
@@ -179,12 +149,12 @@ public class DbConnectivityClass {
         connectToDatabase();
         try {
             Connection conn = DriverManager.getConnection(DB_URL, USERNAME, PASSWORD);
-            String sql = "UPDATE users SET first_name=?, last_name=?, department=?, major=?, email=?, imageURL=? WHERE id=?";
+            String sql = "UPDATE users SET first_name=?, last_name=?, address=?, role=?, email=?, imageURL=? WHERE id=?";
             PreparedStatement preparedStatement = conn.prepareStatement(sql);
             preparedStatement.setString(1, p.getFirstName());
             preparedStatement.setString(2, p.getLastName());
-            preparedStatement.setString(3, p.getDepartment());
-            preparedStatement.setString(4, p.getMajor());
+            preparedStatement.setString(3, p.getAddress());
+            preparedStatement.setString(4, p.getRole());
             preparedStatement.setString(5, p.getEmail());
             preparedStatement.setString(6, p.getImageURL());
             preparedStatement.setInt(7, p.getUserID());
@@ -211,8 +181,6 @@ public class DbConnectivityClass {
             throw new RuntimeException(e);
         }
     }
-
-    //Method to retrieve id from database where it is auto-incremented.
     public int retrieveId(Person p) {
         connectToDatabase();
         int id;
@@ -252,7 +220,6 @@ public class DbConnectivityClass {
         }
         return false;  // Email does not exist for another user
     }
-    // Insert new user into user_data table
     public boolean insertNewUser(String email, String password) {
         String query = "INSERT INTO user_data (email, password) VALUES (?, ?)";
         try (Connection conn = DriverManager.getConnection(DB_URL, USERNAME, PASSWORD);
@@ -301,20 +268,19 @@ public class DbConnectivityClass {
         }
         return isValid;
     }
-    public boolean doesUserExistForCurrentUser(String email, int userId) {
-        String query = "SELECT COUNT(*) FROM users WHERE email = ? AND user_id = ?";
+    public boolean emailCheck(String email) {
+        String query = "SELECT COUNT(*) FROM user_data WHERE email = ?";
         try (Connection conn = DriverManager.getConnection(DB_URL, USERNAME, PASSWORD);
              PreparedStatement ps = conn.prepareStatement(query)) {
             ps.setString(1, email);
-            ps.setInt(2, userId);
             ResultSet rs = ps.executeQuery();
             if (rs.next() && rs.getInt(1) > 0) {
-                return true;  // User exists for the current user_id
+                return true;
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return false;  // User doesn't exist or exists with a different user_id
+        return false;
     }
 
 

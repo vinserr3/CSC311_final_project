@@ -9,19 +9,17 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 import service.UserSession;
 
 public class SignUpController {
-
     @FXML
-    private TextField emailField, passwordField;
+    private TextField emailField;
     @FXML
-    private Button newAccountBtn, goBackBtn;
-
+    private PasswordField passwordField;
     private final DbConnectivityClass cnUtil = new DbConnectivityClass();
-
     @FXML
     protected void createNewAccount(ActionEvent actionEvent) {
         String email = emailField.getText().trim();
@@ -30,8 +28,7 @@ public class SignUpController {
             showAlert(Alert.AlertType.ERROR, "Invalid Input", "Please fill in all fields.");
             return;
         }
-        int userId = UserSession.getInstance().getUserId();
-        if (cnUtil.doesUserExist(email, userId)) {
+        if (cnUtil.emailCheck(email)) {
             showAlert(Alert.AlertType.ERROR, "Account Exists", "An account with this email already exists.");
             return;
         }
